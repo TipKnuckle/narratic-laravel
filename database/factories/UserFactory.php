@@ -33,6 +33,13 @@ class UserFactory extends Factory
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
+            'review_notifications_enabled' => true,
+            'ratings_notifications_enabled' => true,
+            'min_overall' => 0,
+            'min_story' => 0,
+            'min_performance' => 0,
+            'digest_frequency' => 'daily',
+            'last_digest_at' => null,
         ];
     }
 
