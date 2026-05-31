@@ -180,6 +180,10 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ---
 
+## Debugging
+
+When diagnosing a bug, prefer narrowing over reasoning: add a log statement or dump at the suspected boundary, run the code, read the output, then move the probe. Don't trace through call chains speculatively when you can observe actual runtime state.
+
 ## Common agent gotchas
 
 ### Service provider bindings
