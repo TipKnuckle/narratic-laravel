@@ -13,7 +13,10 @@ interface AudibleCatalog
     /** @return ProductResult[] */
     public function search(SearchType $type, string $term, Region $region, int $page = 0): array;
 
-    /** @return RatingResult[] */
+    /**
+     * @param  string[]  $asins
+     * @return RatingResult[]
+     */
     public function fetchRatings(array $asins, Region $region): array;
 
     /** @return ReviewResult[] */

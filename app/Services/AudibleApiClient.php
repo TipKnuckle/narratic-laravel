@@ -8,7 +8,11 @@ use App\Dto\RatingResult;
 use App\Dto\ReviewResult;
 use App\Enums\Region;
 use App\Enums\SearchType;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class AudibleApiClient implements AudibleCatalog
 {
@@ -22,7 +26,7 @@ class AudibleApiClient implements AudibleCatalog
 
     public function search(SearchType $type, string $term, Region $region, int $page = 0): array
     {
-        $response = Http::timeout(self::TIMEOUT_SEARCH)
+        $response = $this->client(self::TIMEOUT_SEARCH)
             ->get("https://{$region->baseDomain()}/1.0/catalog/products", [
                 'response_groups' => 'product_desc,contributors,rating,product_attrs,product_extended_attrs,media',
                 'products_sort_by' => $type->sortBy(),
@@ -49,7 +53,7 @@ class AudibleApiClient implements AudibleCatalog
         $totalChunks = count($chunks);
 
         foreach ($chunks as $index => $chunk) {
-            $response = Http::timeout(self::TIMEOUT_BATCH)
+            $response = $this->client(self::TIMEOUT_BATCH)
                 ->get("https://{$region->baseDomain()}/1.0/catalog/products", [
                     'response_groups' => 'rating',
                     'asins' => implode(',', $chunk),
@@ -76,7 +80,7 @@ class AudibleApiClient implements AudibleCatalog
 
     public function fetchReviews(string $asin, Region $region, int $page = 0): array
     {
-        $response = Http::timeout(self::TIMEOUT_BATCH)
+        $response = $this->client(self::TIMEOUT_BATCH)
             ->get("https://{$region->baseDomain()}/1.0/catalog/products/{$asin}/reviews/", [
                 'sort_by' => 'MostRecent',
                 'num_results' => 15,
@@ -93,4 +97,10 @@ class AudibleApiClient implements AudibleCatalog
         );
     }
 
+    private function client(int $timeout): PendingRequest
+    {
+        return Http::timeout($timeout)
+            ->retry(2, 500, fn (Throwable $e): bool => $e instanceof ConnectionException
+                || ($e instanceof RequestException && $e->response->serverError()));
+    }
 }

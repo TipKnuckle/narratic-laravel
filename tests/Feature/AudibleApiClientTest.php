@@ -1,8 +1,8 @@
 <?php
 
+use App\Contracts\AudibleCatalog;
 use App\Enums\Region;
 use App\Enums\SearchType;
-use App\Services\AudibleApiClient;
 use Illuminate\Support\Facades\Http;
 
 it('performs a search and returns product results', function () {
@@ -27,7 +27,7 @@ it('performs a search and returns product results', function () {
         ]),
     ]);
 
-    $client = app(AudibleApiClient::class);
+    $client = app(AudibleCatalog::class);
     $results = $client->search(SearchType::Narrator, 'Gabriel Le Dit', Region::US);
 
     expect($results)->toHaveCount(1);
@@ -76,7 +76,7 @@ it('fetches ratings in batches', function () {
         ]),
     ]);
 
-    $client = app(AudibleApiClient::class);
+    $client = app(AudibleCatalog::class);
     $results = $client->fetchRatings(['B07DXYZ123'], Region::US);
 
     expect($results)->toHaveCount(1);
@@ -94,7 +94,7 @@ it('routes requests to the correct regional domain', function () {
         ]),
     ]);
 
-    $client = app(AudibleApiClient::class);
+    $client = app(AudibleCatalog::class);
     $results = $client->search(SearchType::Title, 'test', Region::UK);
 
     expect($results)->toHaveCount(1);
@@ -122,7 +122,7 @@ it('fetches reviews', function () {
         ]),
     ]);
 
-    $client = app(AudibleApiClient::class);
+    $client = app(AudibleCatalog::class);
     $results = $client->fetchReviews('B07DXYZ123', Region::US);
 
     expect($results)->toHaveCount(1);
