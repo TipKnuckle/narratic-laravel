@@ -15,6 +15,21 @@ class Review extends Model
         ];
     }
 
+    protected $fillable = [
+        'external_id',
+        'source',
+        'format',
+        'author_name',
+        'title',
+        'body',
+        'guided_responses',
+        'rating_overall',
+        'rating_story',
+        'rating_performance',
+        'related_url',
+        'submitted_at',
+    ];
+
     public function audiobook(): BelongsTo
     {
         return $this->belongsTo(Audiobook::class);
