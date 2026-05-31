@@ -16,9 +16,6 @@ Schedule::command('audiobook:sync-ratings')
     ->everyFiveMinutes()
     ->withoutOverlapping();
 
-// Review ingestion sweep. Runs frequently but only touches titles flagged
-// reviews_pending by the ratings sync. withoutOverlapping so a slow fetch
-// never stacks.
 Schedule::command('audiobook:ingest-reviews')
     ->everyFiveMinutes()
     ->withoutOverlapping();

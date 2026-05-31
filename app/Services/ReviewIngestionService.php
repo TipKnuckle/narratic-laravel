@@ -7,6 +7,7 @@ use App\Enums\Region;
 use App\Events\ReviewPublished;
 use App\Models\Audiobook;
 use App\Models\Review;
+use Illuminate\Support\Facades\DB;
 
 class ReviewIngestionService
 {
@@ -35,9 +36,14 @@ class ReviewIngestionService
             'errors' => 0,
         ];
 
-        Audiobook::where('reviews_pending', true)->chunk(50, function ($audiobooks) use (&$results) {
+        Audiobook::where('reviews_pending', true)->chunkById(50, function ($audiobooks) use (&$results) {
             foreach ($audiobooks as $audiobook) {
-                $outcome = $this->ingestOne($audiobook);
+                try {
+                    $outcome = $this->ingestOne($audiobook);
+                } catch (\Throwable $e) {
+                    $outcome = 'error';
+                }
+
                 $results['processed']++;
 
                 if ($outcome === 'error') {
@@ -62,9 +68,8 @@ class ReviewIngestionService
      */
     public function ingestOne(Audiobook $audiobook): array|string
     {
-        $region = Region::from($audiobook->region);
-
         try {
+            $region = Region::from($audiobook->region);
             $reviews = $this->catalog->fetchReviews($audiobook->asin, $region);
         } catch (\Throwable $e) {
             return 'error';
@@ -74,39 +79,52 @@ class ReviewIngestionService
             return ['ingested' => 0, 'skipped' => 0];
         }
 
+        $externalIds = collect($reviews)->pluck('externalId')->filter()->unique()->values()->all();
+
         $existingExternalIds = Review::where('audiobook_id', $audiobook->id)
             ->where('source', 'audible')
+            ->whereIn('external_id', $externalIds)
             ->pluck('external_id')
             ->all();
 
         $ingested = 0;
         $skipped = 0;
+        $createdReviews = [];
 
-        foreach ($reviews as $reviewResult) {
-            if (in_array($reviewResult->externalId, $existingExternalIds)) {
-                $skipped++;
+        try {
+            DB::transaction(function () use ($audiobook, $reviews, $existingExternalIds, &$ingested, &$skipped, &$createdReviews) {
+                foreach ($reviews as $reviewResult) {
+                    if (in_array($reviewResult->externalId, $existingExternalIds)) {
+                        $skipped++;
 
-                continue;
-            }
+                        continue;
+                    }
 
-            $review = $audiobook->reviews()->create([
-                'external_id' => $reviewResult->externalId,
-                'source' => 'audible',
-                'format' => $reviewResult->format,
-                'author_name' => $reviewResult->authorName,
-                'title' => $reviewResult->title,
-                'body' => $reviewResult->format === 'freeform' ? $reviewResult->body : null,
-                'guided_responses' => $reviewResult->format === 'guided' ? $reviewResult->guidedResponses : null,
-                'rating_overall' => $reviewResult->ratingOverall,
-                'rating_story' => $reviewResult->ratingStory,
-                'rating_performance' => $reviewResult->ratingPerformance,
-                'related_url' => $reviewResult->relatedUrl,
-                'submitted_at' => $reviewResult->submittedAt,
-            ]);
+                    $review = $audiobook->reviews()->create([
+                        'external_id' => $reviewResult->externalId,
+                        'source' => 'audible',
+                        'format' => $reviewResult->format,
+                        'author_name' => $reviewResult->authorName,
+                        'title' => $reviewResult->title,
+                        'body' => $reviewResult->format === 'freeform' ? $reviewResult->body : null,
+                        'guided_responses' => $reviewResult->format === 'guided' ? $reviewResult->guidedResponses : null,
+                        'rating_overall' => $reviewResult->ratingOverall,
+                        'rating_story' => $reviewResult->ratingStory,
+                        'rating_performance' => $reviewResult->ratingPerformance,
+                        'related_url' => $reviewResult->relatedUrl,
+                        'submitted_at' => $reviewResult->submittedAt,
+                    ]);
 
+                    $createdReviews[] = $review;
+                    $ingested++;
+                }
+            });
+        } catch (\Throwable $e) {
+            return 'error';
+        }
+
+        foreach ($createdReviews as $review) {
             ReviewPublished::dispatch($review);
-
-            $ingested++;
         }
 
         return ['ingested' => $ingested, 'skipped' => $skipped];

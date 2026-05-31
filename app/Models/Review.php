@@ -16,6 +16,7 @@ class Review extends Model
     }
 
     protected $fillable = [
+        'audiobook_id',
         'external_id',
         'source',
         'format',
