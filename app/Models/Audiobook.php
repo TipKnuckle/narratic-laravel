@@ -20,6 +20,7 @@ class Audiobook extends Model
             'published_at' => 'datetime',
             'ratings_synced_at' => 'datetime',
             'next_check_at' => 'datetime',
+            'next_availability_check_at' => 'datetime',
             'reviews_pending' => 'boolean',
             'unavailable_since' => 'datetime',
             'availability_checked_at' => 'datetime',
@@ -37,6 +38,7 @@ class Audiobook extends Model
         'published_at',
         'ratings_synced_at',
         'next_check_at',
+        'next_availability_check_at',
         'reviews_pending',
         'availability',
         'unavailable_since',
@@ -100,6 +102,29 @@ class Audiobook extends Model
             })
             ->orderByRaw('next_check_at is null desc')
             ->orderBy('next_check_at', 'asc')
+            ->limit($limit);
+    }
+
+    /**
+     * Scope to audiobooks due for an availability check.
+     *
+     * A title is due when its scheduled `next_availability_check_at` has
+     * passed (or was never set). Ordered by next_availability_check_at
+     * ascending — nulls first, so the most-overdue titles are claimed first.
+     * Mirrors the ratings sync pattern (docs/spec/06-adr-availability-checking-pattern.md).
+     */
+    public function scopeDueForAvailabilityCheck(Builder $query, ?int $maxPerRun = null): Builder
+    {
+        $now = now();
+        $limit = $maxPerRun ?? (int) config('narratic.availability_check.batch_limit', 200);
+
+        return $query
+            ->where(function (Builder $q) use ($now) {
+                $q->whereNull('next_availability_check_at')
+                    ->orWhere('next_availability_check_at', '<=', $now);
+            })
+            ->orderByRaw('next_availability_check_at is null desc')
+            ->orderBy('next_availability_check_at', 'asc')
             ->limit($limit);
     }
 }

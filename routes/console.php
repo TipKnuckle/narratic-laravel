@@ -19,3 +19,7 @@ Schedule::command('audiobook:sync-ratings')
 Schedule::command('audiobook:ingest-reviews')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('audiobook:check-availability')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();

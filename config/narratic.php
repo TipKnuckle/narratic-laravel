@@ -40,4 +40,24 @@ return [
 
     ],
 
+    /*
+
+    |--------------------------------------------------------------------------
+    | Availability Checking Cadence
+    |--------------------------------------------------------------------------
+    |
+    | How often each tracked title is probed for availability. The full
+    | rationale lives in docs/spec/06-adr-availability-checking-pattern.md.
+    | Same claimer-tick pattern as Ratings Sync — a frequent scheduler tick
+    | drains titles whose next_availability_check_at has passed.
+    |
+    */
+
+    'availability_check' => [
+        'interval_days' => (int) env('NARRATIC_AVAILABILITY_INTERVAL_DAYS', 7),
+        'jitter_pct' => (float) env('NARRATIC_AVAILABILITY_JITTER_PCT', 0.15),
+        'batch_limit' => (int) env('NARRATIC_AVAILABILITY_BATCH_LIMIT', 200),
+        'strike_threshold' => (int) env('NARRATIC_AVAILABILITY_STRIKE_THRESHOLD', 2),
+    ],
+
 ];

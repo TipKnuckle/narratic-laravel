@@ -9,6 +9,13 @@ class AvailabilityEvent extends Model
 {
     public $timestamps = false;
 
+    protected $fillable = [
+        'audiobook_id',
+        'from_state',
+        'to_state',
+        'occurred_at',
+    ];
+
     protected function casts(): array
     {
         return [
