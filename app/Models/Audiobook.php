@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use Database\Factories\AudiobookFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Audiobook extends Model
 {
+    /** @use HasFactory<AudiobookFactory> */
+    use HasFactory;
+
     protected function casts(): array
     {
         return [
@@ -18,6 +23,24 @@ class Audiobook extends Model
             'availability_checked_at' => 'datetime',
         ];
     }
+
+    protected $fillable = [
+        'asin',
+        'region',
+        'title',
+        'subtitle',
+        'description',
+        'runtime_minutes',
+        'cover_image_url',
+        'published_at',
+        'ratings_synced_at',
+        'reviews_pending',
+        'availability',
+        'unavailable_since',
+        'unavailable_strikes',
+        'availability_checked_at',
+        'rating_zeroed_count',
+    ];
 
     public function contributors(): BelongsToMany
     {

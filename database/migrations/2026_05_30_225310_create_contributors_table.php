@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('contributors', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('slug')->index();
+            $table->string('slug')->unique();
             $table->timestamps();
         });
     }
