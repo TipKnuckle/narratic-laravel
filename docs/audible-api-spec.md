@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-Audible provides a REST API for querying audiobook product data including search, ratings, and customer reviews. The API is region-scoped — each marketplace (US, UK) has its own base domain. All responses are JSON. Authentication does not appear to require an API key in the observed usage patterns; requests use standard HTTP GET with randomised User-Agent headers to avoid rate-limiting.
+Audible provides a REST API for querying audiobook product data including search, ratings, and customer reviews. The API is region-scoped — each marketplace (US, UK) has its own base domain. All responses are JSON. Authentication does not appear to require an API key in the observed usage patterns; requests use standard HTTP GET.
 
 ### Base Domains by Region
 
@@ -278,7 +278,7 @@ GET https://api.audible.com/1.0/catalog/products?response_groups=rating&asins=B0
 
 2. **Review count can decrease.** If `num_reviews` drops between checks (e.g., a review was removed), this is logged as a warning but the system still records it — there's no assumption that counts are monotonically increasing.
 
-3. **Rate limiting concern**: The code uses randomized User-Agent strings (`narratic_uagent()`) and sleeps between bulk prospect searches (1 second). This implies the API may rate-limit or block repeated requests from identical fingerprints.
+3. **Rate limiting concern**: The original WordPress implementation slept between bulk requests (1 second) and rotated User-Agent strings. The sleep/pacing is preserved in the Laravel implementation; UA rotation has been dropped — six years of stable access without it suggests Audible does not actively police this endpoint.
 
 ---
 
@@ -436,7 +436,6 @@ While explicit rate-limit documentation is not available in this codebase, the c
 
 | Pattern | Code Location | Purpose |
 |---|---|---|
-| **Randomised User-Agent** | `narratic_uagent()` — rotates through 12 browser UA strings per request | Avoid fingerprint-based blocking |
 | **Request chunking** | `array_chunk($regPids, 50)` in ratings lookup | Keep batch sizes at 50 ASINs max |
 | **Region isolation** | Separate API calls per region before batching | Prevent cross-region data mixing |
 | **Sleep between bulk requests** | `sleep(1)` in prospector loop | Throttle outbound request rate |
