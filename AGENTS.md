@@ -178,4 +178,17 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
 - Do NOT delete tests without approval.
 
+---
+
+## Common agent gotchas
+
+### Service provider bindings
+
+Agents often write `register()` methods with `$this->app->bind(...)` calls.
+**Laravel 12+ uses `$bindings` / `$singletons` properties instead.**
+
+The framework reads these arrays and registers everything automatically — no
+`register()` method needed unless you have logic. See
+`app/Providers/AppServiceProvider.php` for the current pattern.
+
 </laravel-boost-guidelines>

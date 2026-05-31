@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RatingSnapshot extends Model
 {
+    protected $fillable = [
+        'recorded_at',
+        'num_reviews',
+    ];
+
     protected function casts(): array
     {
         return [

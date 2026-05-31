@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Contracts\AudibleCatalog;
+use App\Contracts\Membership;
 use App\Services\AudibleApiClient;
+use App\Services\DevMembership;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -13,15 +15,14 @@ use Illuminate\Validation\Rules\Password;
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * All of the container bindings that should be registered.
+     *
+     * @var array<class-string, class-string>
      */
-    public function register(): void
-    {
-        $this->app->bind(
-            AudibleCatalog::class,
-            AudibleApiClient::class,
-        );
-    }
+    public $bindings = [
+        AudibleCatalog::class => AudibleApiClient::class,
+        Membership::class => DevMembership::class,
+    ];
 
     /**
      * Bootstrap any application services.

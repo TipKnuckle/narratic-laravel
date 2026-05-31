@@ -53,7 +53,7 @@ Each step *may* also emit a domain event (`RatingsChanged`, `ReviewPublished`, `
 - **Review count may decrease** (a review was removed). Allowed; record it, don't assume monotonic growth.
 - **Pre-orders are skipped** — a future `published_at` means no ratings exist yet.
 
-**Deferred to implementation:** how titles are selected as "due" (an adaptive freshness heuristic — older data checked less often — is a reasonable API-load optimization), how ASINs are batched per region, and how diffs are computed/stored. None changes the result above.
+**Title selection** — *which* titles are due for a refresh, and how often, is an adaptive freshness heuristic (older/quieter data checked less often) decided in **`05-adr-ratings-sync-cadence.md`**. Summary: a daily ceiling, backing off to a 5-day floor by recency-of-change, materialized as `next_check_at` and drained through a rate-limited queue. How ASINs are batched per region and how diffs are computed/stored remain free implementation choices; none changes the result above.
 
 ---
 
@@ -119,6 +119,7 @@ Each step *may* also emit a domain event (`RatingsChanged`, `ReviewPublished`, `
 
 **End result:**
 - For audiobooks due a check (not checked in ~7 days, configurable), probe availability.
+  - **Title selection** follows the same materialized-timestamp / claimer-tick pattern as Ratings Sync (§3). See ADR 06 (`06-adr-availability-checking-pattern.md`).
 - On failure: increment `unavailable_strikes`. On reaching the strike threshold (2), set `availability = unavailable`, set `unavailable_since` if not already set, **append an `availability_events` row** (`available → unavailable`), and optionally emit `BecameUnavailable`.
 - On success after being unavailable: reset `unavailable_strikes`, clear `unavailable_since`, set `availability = available`, **append an `availability_events` row** (`unavailable → available`), and optionally emit `BecameAvailable`.
 - Stamp `availability_checked_at`.
@@ -158,7 +159,7 @@ Cadence is configuration. Reasonable starting points, expressed as scheduled job
 
 | Workflow | Starting cadence | Notes |
 |---|---|---|
-| Ratings sync | frequent (minutes) | Selection heuristic limits actual API volume. |
+| Ratings sync | frequent tick (minutes) | The tick is a **claimer**, not a per-title fetch cadence — `next_check_at` governs actual volume. See `05-adr-ratings-sync-cadence.md`. |
 | Review ingestion | frequent (minutes) | Only touches `reviews_pending` titles. |
 | Availability check | hourly sweep | Each title actually probed ~weekly. |
 | Autotracking | daily | |

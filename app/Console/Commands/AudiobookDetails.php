@@ -64,7 +64,7 @@ class AudiobookDetails extends Command
                 $rating->performanceStar5,
             ));
             $this->line("  Reviews count: {$rating->numReviews}");
-            $this->line("  Zeroed: " . ($rating->isZeroed ? 'true' : 'false'));
+            $this->line('  Zeroed: '.($rating->isZeroed ? 'true' : 'false'));
         }
 
         // Fetch reviews
