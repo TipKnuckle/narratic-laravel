@@ -199,6 +199,84 @@ it('filters reviews that do not meet minimum thresholds', function () {
     expect($result)->toBe('skipped');
 });
 
+it('includes a late-ingested review whose submitted_at predates the window', function () {
+    // Window is (yesterday, now]
+    $this->user->last_digest_at = now()->subDay();
+    $this->user->save();
+
+    // Submitted 5 days ago (before the window starts), but ingested just now
+    // (inside the window) and still inside the 30-day freshness gate.
+    Review::factory()->create([
+        'audiobook_id' => $this->audiobook->id,
+        'source' => 'audible',
+        'submitted_at' => now()->subDays(5),
+        'rating_overall' => 4,
+        'rating_story' => 4,
+        'rating_performance' => 5,
+    ]);
+
+    $mailer = mock(Mailer::class);
+    $mailer->expects('send')->once();
+
+    $membership = mock(Membership::class);
+    $membership->allows('isActive')->andReturn(true);
+
+    $service = new DigestService($mailer, $membership);
+    $result = $service->sendForUser($this->user);
+
+    expect($result)->toBe('sent');
+});
+
+it('excludes a review whose submitted_at is past the 30-day freshness gate', function () {
+    // Ingested today (inside the window) but submitted 60 days ago.
+    Review::factory()->create([
+        'audiobook_id' => $this->audiobook->id,
+        'source' => 'audible',
+        'submitted_at' => now()->subDays(60),
+        'rating_overall' => 5,
+        'rating_story' => 5,
+        'rating_performance' => 5,
+    ]);
+
+    $mailer = mock(Mailer::class);
+    $mailer->expects('send')->never();
+
+    $membership = mock(Membership::class);
+    $membership->allows('isActive')->andReturn(true);
+
+    $service = new DigestService($mailer, $membership);
+    $result = $service->sendForUser($this->user);
+
+    expect($result)->toBe('skipped');
+});
+
+it('excludes a review whose overall rating is below the member minimum', function () {
+    // High story and performance, but a low overall — current rule was missing
+    // the overall comparison, so this used to slip through.
+    Review::factory()->create([
+        'audiobook_id' => $this->audiobook->id,
+        'source' => 'audible',
+        'submitted_at' => now()->subDay(1),
+        'rating_overall' => 1,
+        'rating_story' => 5,
+        'rating_performance' => 5,
+    ]);
+
+    $this->user->min_overall = 3;
+    $this->user->save();
+
+    $mailer = mock(Mailer::class);
+    $mailer->expects('send')->never();
+
+    $membership = mock(Membership::class);
+    $membership->allows('isActive')->andReturn(true);
+
+    $service = new DigestService($mailer, $membership);
+    $result = $service->sendForUser($this->user);
+
+    expect($result)->toBe('skipped');
+});
+
 it('sendForFrequency processes only users at the given frequency', function () {
     // Two daily users with content
     $dailyA = User::factory()->create([

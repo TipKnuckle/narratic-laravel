@@ -141,9 +141,10 @@ class DigestService
         $reviewCutoff = $windowEnd->subDays($ageGateDays);
 
         return Review::whereIn('audiobook_id', $audiobookIds)
-            ->where('submitted_at', '>=', $windowStart)
-            ->where('submitted_at', '<=', $windowEnd)
+            ->where('created_at', '>', $windowStart)
+            ->where('created_at', '<=', $windowEnd)
             ->where('submitted_at', '>=', $reviewCutoff)
+            ->where('rating_overall', '>=', $user->min_overall)
             ->where('rating_story', '>=', $user->min_story)
             ->where('rating_performance', '>=', $user->min_performance)
             ->get()
