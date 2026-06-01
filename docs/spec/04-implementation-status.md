@@ -200,3 +200,14 @@
 8. ~~Mailer contract + implementation~~ ✅ Done
 9. **Review `visibleTo` scope** (Phase 1 §13) — computed visibility for on-site display.
 10. ~~Scheduled jobs~~ ✅ Done
+
+---
+
+## Known future work — not yet specced
+
+### Rating history: trend view + snapshot compression
+
+Carried over from the WP site, not yet in any phase spec. The two are coupled — design them together.
+
+- **30/60/90-day rating trend view (UI).** Show how a title's ratings moved over recent periods. This is the feature the legacy ratings table's downsampling existed to serve.
+- **`rating_snapshots` compression / downsampling.** The table is append-only-on-change; across ~10k tracked titles that is an unbounded time-series with meaningful daily row growth. Plan a backup-style temporal rollup: fine granularity for recent data, coarsening with age, **always retaining the oldest snapshot**. Constraint: compression must preserve whatever granularity the trend view needs — never downsample below the 30/60/90-day buckets it reads. (`narratic_db_getlast`'s old "find latest via self-join, not MAX(id)" rule only existed because rows got pruned; if rollups can delete rows here too, "latest" must order by `recorded_at`, not assume the highest id survives.)

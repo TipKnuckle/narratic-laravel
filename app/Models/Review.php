@@ -11,6 +11,7 @@ class Review extends Model
 {
     /** @use HasFactory<ReviewFactory> */
     use HasFactory;
+
     protected function casts(): array
     {
         return [

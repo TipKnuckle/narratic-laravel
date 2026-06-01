@@ -199,38 +199,43 @@ it('filters reviews that do not meet minimum thresholds', function () {
     expect($result)->toBe('skipped');
 });
 
-it('sendForFrequency processes users at the given frequency', function () {
-    $dailyUser = User::factory()->create([
+it('sendForFrequency processes only users at the given frequency', function () {
+    // Two daily users with content
+    $dailyA = User::factory()->create([
         'digest_frequency' => 'daily',
         'last_digest_at' => null,
     ]);
-
-    $audiobookA = Audiobook::factory()->create(['asin' => 'B07DAILY', 'region' => 'US']);
-
-    Tracking::factory()->create([
-        'user_id' => $dailyUser->id,
-        'audiobook_id' => $audiobookA->id,
-        'source' => 'manual',
-    ]);
-
+    $bookA = Audiobook::factory()->create(['asin' => 'B07FREQDA', 'region' => 'US']);
+    Tracking::factory()->create(['user_id' => $dailyA->id, 'audiobook_id' => $bookA->id, 'source' => 'manual']);
     Review::factory()->create([
-        'audiobook_id' => $audiobookA->id,
-        'source' => 'audible',
-        'submitted_at' => now()->subDay(1),
-        'rating_story' => 4,
-        'rating_performance' => 5,
+        'audiobook_id' => $bookA->id, 'source' => 'audible',
+        'submitted_at' => now()->subDay(1), 'rating_story' => 4, 'rating_performance' => 5,
     ]);
+
+    $dailyB = User::factory()->create([
+        'digest_frequency' => 'daily',
+        'last_digest_at' => null,
+    ]);
+    $bookB = Audiobook::factory()->create(['asin' => 'B07FREQDB', 'region' => 'US']);
+    Tracking::factory()->create(['user_id' => $dailyB->id, 'audiobook_id' => $bookB->id, 'source' => 'manual']);
+    Review::factory()->create([
+        'audiobook_id' => $bookB->id, 'source' => 'audible',
+        'submitted_at' => now()->subDay(1), 'rating_story' => 4, 'rating_performance' => 5,
+    ]);
+
+    // One weekly user (should be excluded)
+    User::factory()->create(['digest_frequency' => 'weekly', 'last_digest_at' => null]);
 
     $mailer = mock(Mailer::class);
-    $mailer->expects('send')->once();
-
+    $mailer->allows('send');
     $membership = mock(Membership::class);
     $membership->allows('isActive')->andReturn(true);
 
-    // Call sendForUser directly instead of sendForFrequency to avoid
-    // chunkById issues in the test environment
     $service = new DigestService($mailer, $membership);
-    $result = $service->sendForUser($dailyUser);
+    $results = $service->sendForFrequency('daily');
 
-    expect($result)->toBe('sent');
+    // beforeEach creates a daily user with no content → 1 skip
+    expect($results['sent'])->toBe(2);
+    expect($results['skipped'])->toBe(1);
+    expect($results['errors'])->toBe(0);
 });

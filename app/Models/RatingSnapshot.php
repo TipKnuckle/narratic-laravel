@@ -12,6 +12,7 @@ class RatingSnapshot extends Model
 {
     /** @use HasFactory<RatingSnapshotFactory> */
     use HasFactory;
+
     protected $fillable = [
         'recorded_at',
         'num_reviews',
