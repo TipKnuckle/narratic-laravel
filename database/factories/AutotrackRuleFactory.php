@@ -17,6 +17,7 @@ class AutotrackRuleFactory extends Factory
             'user_id' => User::factory(),
             'search_type' => fake()->randomElement(['author', 'narrator', 'title']),
             'term' => fake()->name(),
+            'region' => 'US',
         ];
     }
 }

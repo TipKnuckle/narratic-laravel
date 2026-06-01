@@ -23,3 +23,7 @@ Schedule::command('audiobook:ingest-reviews')
 Schedule::command('audiobook:check-availability')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('audiobook:autotrack')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
