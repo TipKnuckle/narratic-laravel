@@ -27,3 +27,7 @@ Schedule::command('audiobook:check-availability')
 Schedule::command('audiobook:autotrack')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('audiobook:decay-unavailable')
+    ->daily()
+    ->withoutOverlapping();

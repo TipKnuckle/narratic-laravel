@@ -7,6 +7,7 @@ use App\Enums\Region;
 use App\Events\BecameAvailable;
 use App\Events\BecameUnavailable;
 use App\Models\Audiobook;
+use App\Models\Tracking;
 use Carbon\CarbonImmutable;
 
 class AvailabilityCheckService
@@ -188,5 +189,29 @@ class AvailabilityCheckService
         $offset = $spread > 0 ? random_int(-$spread, $spread) : 0;
 
         return CarbonImmutable::now()->addHours($baseHours + $offset);
+    }
+
+    /**
+     * Remove trackings for titles that have been unavailable past the decay
+     * threshold.
+     *
+     * Returns the number of trackings deleted.
+     */
+    public function decayStaleTrackings(): int
+    {
+        $thresholdDays = (int) config('narratic.decay.unavailable_days', 180);
+        $cutoff = CarbonImmutable::now()->subDays($thresholdDays);
+
+        $staleAudiobookIds = Audiobook::where('availability', 'unavailable')
+            ->where('unavailable_since', '<=', $cutoff)
+            ->pluck('id')
+            ->all();
+
+        if (empty($staleAudiobookIds)) {
+            return 0;
+        }
+
+        return Tracking::whereIn('audiobook_id', $staleAudiobookIds)
+            ->delete();
     }
 }

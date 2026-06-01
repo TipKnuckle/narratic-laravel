@@ -103,7 +103,7 @@
 | 2.6c | Strike threshold (2 failures → unavailable) | ✅ Done | Configurable `strike_threshold`; increments `unavailable_strikes` per failure. |
 | 2.6d | Write `availability_events` on transition | ✅ Done | Events logged on both unavailable→available and available→unavailable transitions. |
 | 2.6e | Reset on recovery (available after unavailable) | ✅ Done | Clears strikes and `unavailable_since`; dispatches `BecameAvailable` event. |
-| 2.6f | 180-day decay → remove trackings | ❌ Missing | Bulk delete trackings for stale-unavailable titles. |
+| 2.6f | 180-day decay → remove trackings | ✅ Done | `AvailabilityCheckService::decayStaleTrackings()` bulk-deletes trackings for titles past `narratic.decay.unavailable_days` (default 180). |
 
 ### 2.7 Digests (Delivery)
 
@@ -182,9 +182,9 @@
 | Phase | Done | Partial | Missing | Deferred |
 |---|---|---|---|---|
 | Phase 1 — Data Model | ~85% | 0% | ~15% | 0% |
-| Phase 2 — Services & Workflows | ~60% | ~0% | ~40% | 0% |
+| Phase 2 — Services & Workflows | ~65% | ~0% | ~35% | 0% |
 | Phase 3 — External Integrations | ~40% | ~5% | ~55% | ~5% (Audiofile) |
-| **Overall** | **~70%** | **~0%** | **~25%** | **~5%** |
+| **Overall** | **~72%** | **~0%** | **~23%** | **~5%** |
 
 ---
 
@@ -195,7 +195,7 @@
 3. ~~Review ingestion service~~ ✅ Done
 4. ~~Availability check service~~ ✅ Done
 5. ~~Autotracking workflow~~ ✅ Done
-6. **180-day decay** (Phase 2 §6f) — bulk-delete trackings for stale-unavailable titles.
+6. ~~180-day decay~~ ✅ Done
 7. **Digest assembly + delivery** (Phase 2 §7 + §8) — query fact tables, apply preferences, send via Mailer contract.
 8. **Mailer contract + implementation** (Phase 3 §9-11) — needed by digest delivery.
 9. **Review `visibleTo` scope** (Phase 1 §13) — computed visibility for on-site display.

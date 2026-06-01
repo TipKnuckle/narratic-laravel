@@ -60,4 +60,20 @@ return [
         'strike_threshold' => (int) env('NARRATIC_AVAILABILITY_STRIKE_THRESHOLD', 2),
     ],
 
+    /*
+
+    |--------------------------------------------------------------------------
+    | Unavailability Decay
+    |--------------------------------------------------------------------------
+    |
+    | When a title has been unavailable for this many days, its trackings are
+    | automatically removed. This prevents stale unavailable titles from
+    | accumulating in member libraries indefinitely.
+    |
+    */
+
+    'decay' => [
+        'unavailable_days' => (int) env('NARRATIC_DECAY_UNAVAILABLE_DAYS', 180),
+    ],
+
 ];
