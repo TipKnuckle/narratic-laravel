@@ -76,4 +76,20 @@ return [
         'unavailable_days' => (int) env('NARRATIC_DECAY_UNAVAILABLE_DAYS', 180),
     ],
 
+    /*
+
+    |--------------------------------------------------------------------------
+    | Digests
+    |--------------------------------------------------------------------------
+    |
+    | Controls digest assembly behaviour: initial lookback for new users,
+    | and the age gate for review freshness.
+    |
+    */
+
+    'digests' => [
+        'initial_lookback_days' => (int) env('NARRATIC_DIGESTS_INITIAL_LOOKBACK_DAYS', 7),
+        'review_age_gate_days' => (int) env('NARRATIC_DIGESTS_REVIEW_AGE_GATE_DAYS', 30),
+    ],
+
 ];

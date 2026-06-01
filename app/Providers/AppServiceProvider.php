@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Contracts\AudibleCatalog;
+use App\Contracts\Mailer;
 use App\Contracts\Membership;
 use App\Services\AudibleApiClient;
+use App\Services\DevMailer;
 use App\Services\DevMembership;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -22,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
     public $bindings = [
         AudibleCatalog::class => AudibleApiClient::class,
         Membership::class => DevMembership::class,
+        Mailer::class => DevMailer::class,
     ];
 
     /**

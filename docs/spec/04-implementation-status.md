@@ -88,11 +88,11 @@
 
 | # | Concern | Status | Notes |
 |---|---|---|---|
-| 2.5a | Common gates (active tracking, active subscription) | ❌ Missing | Query logic for digest assembly. |
-| 2.5b | New reviews — age gate (30-day `submitted_at` freshness) | ❌ Missing | Plus threshold checks. |
-| 2.5c | Rating changes — net delta over window | ❌ Missing | Compare snapshots at window boundaries. |
-| 2.5d | Availability changes — events in window | ❌ Missing | Collapse flaps to net effect. |
-| 2.5e | New releases — auto-trackings in window | ❌ Missing | `source=auto` + `created_at` in window. |
+| 2.5a | Common gates (active tracking, active subscription) | ✅ Done | `DigestService::sendForUser()` checks `Membership::isActive()` and filters by tracked audiobook IDs. |
+| 2.5b | New reviews — age gate (30-day `submitted_at` freshness) | ✅ Done | Plus threshold checks against user's `min_story`/`min_performance`. |
+| 2.5c | Rating changes — net delta over window | ✅ Done | Compares `num_reviews` between snapshot at `last_digest_at` boundary and latest snapshot. |
+| 2.5d | Availability changes — events in window | ✅ Done | Queries `availability_events` within window for tracked titles. |
+| 2.5e | New releases — auto-trackings in window | ✅ Done | `source=auto` + `created_at` in window. |
 
 ### 2.6 Availability Checking
 
@@ -109,15 +109,15 @@
 
 | # | Concern | Status | Notes |
 |---|---|---|---|
-| 2.7a | Resolve window `(last_digest_at, now]` | ❌ Missing | Handle null (initial lookback). |
-| 2.7b | Assemble digest sections from fact tables | ❌ Missing | Query reviews/snapshots/events/trackings per member. |
-| 2.7c | Apply current preferences (toggles, thresholds) | ❌ Missing | All checks at send time. |
-| 2.7d | Render digest content (`DigestContent`) | ❌ Missing | Data structure for mailer. |
-| 2.7e | Send via `Mailer` contract | ❌ Missing | Only when content is non-empty. |
-| 2.7f | Advance `last_digest_at` on success | ❌ Missing | Cursor-based idempotency. |
-| 2.7g | Skip empty digests | ❌ Missing | No empty emails. |
-| 2.7h | Handle `digest_frequency = off` | ❌ Missing | Skip those members entirely. |
-| 2.7i | Daily run targets `daily` members; weekly run targets `weekly` | ❌ Missing | Audience selection. |
+| 2.7a | Resolve window `(last_digest_at, now]` | ✅ Done | `DigestService` resolves window; null `last_digest_at` uses configurable initial lookback (default 7 days). |
+| 2.7b | Assemble digest sections from fact tables | ✅ Done | Queries reviews, rating snapshots, availability events, auto-trackings per member. |
+| 2.7c | Apply current preferences (toggles, thresholds) | ✅ Done | Checks `review_notifications_enabled`, `ratings_notifications_enabled`, `min_story`, `min_performance` at send time. |
+| 2.7d | Render digest content (`DigestContent`) | ✅ Done | DTO with four sections + `isEmpty()` guard. |
+| 2.7e | Send via `Mailer` contract | ✅ Done | Only when content is non-empty. |
+| 2.7f | Advance `last_digest_at` on success | ✅ Done | Stamps `now` after successful send. |
+| 2.7g | Skip empty digests | ✅ Done | `DigestContent::isEmpty()` check before send. |
+| 2.7h | Handle `digest_frequency = off` | ✅ Done | Query filters by frequency; `off` members are never queried. |
+| 2.7i | Daily run targets `daily` members; weekly run targets `weekly` | ✅ Done | `sendForFrequency('daily')` / `sendForFrequency('weekly')` each query their own audience. |
 
 ### 2.8 Scheduling
 
@@ -127,7 +127,7 @@
 | 2.8b | Review ingestion scheduled job | ✅ Done | `audiobook:ingest-reviews` scheduled every 5 min (`withoutOverlapping`). |
 | 2.8c | Availability check scheduled job | ✅ Done | `audiobook:check-availability` scheduled every 5 min (`withoutOverlapping`). |
 | 2.8d | Autotracking scheduled job | ✅ Done | `audiobook:autotrack` scheduled every 5 min (`withoutOverlapping`). |
-| 2.8e | Digests scheduled job (daily + weekly) | ❌ Missing | Console command + schedule. |
+| 2.8e | Digests scheduled job (daily + weekly) | ✅ Done | `audiobook:send-digests daily` at 06:00 daily; `audiobook:send-digests weekly` at 06:00 Sunday (`withoutOverlapping`). |
 
 **Phase 2 status: ~10% done.** The search/ingestion pipeline works. All other workflows are unimplemented.
 
@@ -145,10 +145,10 @@
 | 3.6 | Audiofile Magazine source | 🗑️ Deferred post-beta | Schema ready (`source=audiofile`). Integration TBD. |
 | 3.7 | `Membership` contract | ✅ Done | Interface with `isActive(User)` + `maxTracked(User)`. |
 | 3.8 | Membership default impl (dev stub) | ✅ Done | `DevMembership` — always active, unlimited. Swap when billing library chosen. Plans/subscriptions tables deferred. |
-| 3.9 | `Mailer` contract | ❌ Missing | `send(User, DigestContent)` interface. |
-| 3.10 | `DigestContent` DTO | ❌ Missing | Data structure for digest sections. |
-| 3.11 | Mailer implementation | ❌ Missing | Framework Mailables or ESP driver. |
-| 3.12 | `AppServiceProvider` bindings | 🔶 Partial | `AudibleCatalog` and `Membership` bound. `Mailer` not yet bound. |
+| 3.9 | `Mailer` contract | ✅ Done | `send(User, DigestContent)` interface in `app/Contracts/Mailer.php`. |
+| 3.10 | `DigestContent` DTO | ✅ Done | Data structure with four sections + `isEmpty()` check. |
+| 3.11 | Mailer implementation | ✅ Done | `DevMailer` — logs to app log. Swap when ESP library chosen. |
+| 3.12 | `AppServiceProvider` bindings | ✅ Done | `Mailer::class => DevMailer::class` added to `$bindings`. |
 
 **Phase 3 status: ~40% done.** Audible integration is complete. Membership and Mailer contracts plus implementations are missing.
 
@@ -182,9 +182,9 @@
 | Phase | Done | Partial | Missing | Deferred |
 |---|---|---|---|---|
 | Phase 1 — Data Model | ~85% | 0% | ~15% | 0% |
-| Phase 2 — Services & Workflows | ~65% | ~0% | ~35% | 0% |
-| Phase 3 — External Integrations | ~40% | ~5% | ~55% | ~5% (Audiofile) |
-| **Overall** | **~72%** | **~0%** | **~23%** | **~5%** |
+| Phase 2 — Services & Workflows | ~95% | ~0% | ~5% | 0% |
+| Phase 3 — External Integrations | ~75% | ~0% | ~20% | ~5% (Audiofile) |
+| **Overall** | **~90%** | **~0%** | **~5%** | **~5%** |
 
 ---
 
@@ -196,7 +196,7 @@
 4. ~~Availability check service~~ ✅ Done
 5. ~~Autotracking workflow~~ ✅ Done
 6. ~~180-day decay~~ ✅ Done
-7. **Digest assembly + delivery** (Phase 2 §7 + §8) — query fact tables, apply preferences, send via Mailer contract.
-8. **Mailer contract + implementation** (Phase 3 §9-11) — needed by digest delivery.
+7. ~~Digest assembly + delivery~~ ✅ Done
+8. ~~Mailer contract + implementation~~ ✅ Done
 9. **Review `visibleTo` scope** (Phase 1 §13) — computed visibility for on-site display.
-10. **Scheduled jobs** (Phase 2 §8e) — digests need scheduling.
+10. ~~Scheduled jobs~~ ✅ Done

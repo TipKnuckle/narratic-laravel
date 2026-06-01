@@ -31,3 +31,11 @@ Schedule::command('audiobook:autotrack')
 Schedule::command('audiobook:decay-unavailable')
     ->daily()
     ->withoutOverlapping();
+
+Schedule::command('audiobook:send-digests daily')
+    ->dailyAt('06:00')
+    ->withoutOverlapping();
+
+Schedule::command('audiobook:send-digests weekly')
+    ->weeklyOn(0, '06:00')
+    ->withoutOverlapping();

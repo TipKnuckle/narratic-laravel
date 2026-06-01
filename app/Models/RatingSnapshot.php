@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\RatingSnapshotFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RatingSnapshot extends Model
 {
+    /** @use HasFactory<RatingSnapshotFactory> */
+    use HasFactory;
     protected $fillable = [
         'recorded_at',
         'num_reviews',
