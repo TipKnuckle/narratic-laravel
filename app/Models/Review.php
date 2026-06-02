@@ -52,10 +52,8 @@ class Review extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
-        $query->where(function (Builder $q) use ($user) {
-            $q->where('rating_overall', '>=', $user->min_overall)
-                ->where('rating_story', '>=', $user->min_story)
-                ->where('rating_performance', '>=', $user->min_performance);
-        });
+        $query->where('rating_overall', '>=', $user->min_overall)
+            ->where('rating_story', '>=', $user->min_story)
+            ->where('rating_performance', '>=', $user->min_performance);
     }
 }
