@@ -32,7 +32,7 @@
 | 1.10 | **AvailabilityEvent** table + model | ✅ Done | Migration, Model. `$timestamps = false`. Index `(audiobook_id, occurred_at)`. |
 | 1.11 | **Plan** table + model | ❌ Missing | Needed for Membership default impl. |
 | 1.12 | **Subscription** table + model | ❌ Missing | Needed for Membership default impl. |
-| 1.13 | `Review::visibleTo($user)` scope | ❌ Missing | Computed visibility: `rating_story >= min_story AND rating_performance >= min_performance`. |
+| 1.13 | `Review::visibleTo($user)` scope | ✅ Done | Computed visibility: `rating_overall >= min_overall AND rating_story >= min_story AND rating_performance >= min_performance`. Added `overall` gate per member preference (not in original spec but present on User model). |
 | 1.14 | **Factories** | ✅ Done | Audiobook, Review, Contributor, RatingSnapshot, RatingAspectSnapshot, Tracking, AutotrackRule, AvailabilityEvent, User factories all exist. |
 
 **Phase 1 status: ~85% done.** Plans & Subscriptions tables/models and the `visibleTo` scope are the remaining gaps.
@@ -181,10 +181,10 @@
 
 | Phase | Done | Partial | Missing | Deferred |
 |---|---|---|---|---|
-| Phase 1 — Data Model | ~85% | 0% | ~15% | 0% |
+| Phase 1 — Data Model | ~95% | 0% | ~5% | 0% |
 | Phase 2 — Services & Workflows | ~95% | ~0% | ~5% | 0% |
 | Phase 3 — External Integrations | ~75% | ~0% | ~20% | ~5% (Audiofile) |
-| **Overall** | **~90%** | **~0%** | **~5%** | **~5%** |
+| **Overall** | **~92%** | **~0%** | **~3%** | **~5%** |
 
 ---
 
