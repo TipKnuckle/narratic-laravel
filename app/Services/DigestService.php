@@ -147,6 +147,7 @@ class DigestService
             ->where('rating_overall', '>=', $user->min_overall)
             ->where('rating_story', '>=', $user->min_story)
             ->where('rating_performance', '>=', $user->min_performance)
+            ->with('audiobook')
             ->get()
             ->all();
     }
@@ -166,19 +167,29 @@ class DigestService
             return [];
         }
 
+        // Fetch latest snapshot per audiobook (the "current"), with audiobook pre-loaded
+        $currentSnapshots = RatingSnapshot::whereIn('audiobook_id', $audiobookIds)
+            ->orderBy('recorded_at', 'desc')
+            ->with('audiobook')
+            ->get()
+            ->groupBy('audiobook_id')
+            ->map(fn ($group) => $group->first());
+
+        // Fetch the snapshot just before the window start (the "previous"), with audiobook pre-loaded
+        $previousSnapshots = RatingSnapshot::whereIn('audiobook_id', $audiobookIds)
+            ->where('recorded_at', '<=', $windowStart)
+            ->orderBy('recorded_at', 'desc')
+            ->with('audiobook')
+            ->get()
+            ->groupBy('audiobook_id')
+            ->map(fn ($group) => $group->first());
+
         $changes = [];
 
-        foreach ($audiobookIds as $id) {
-            $previous = RatingSnapshot::where('audiobook_id', $id)
-                ->where('recorded_at', '<=', $windowStart)
-                ->orderBy('recorded_at', 'desc')
-                ->first();
+        foreach ($currentSnapshots as $audiobookId => $current) {
+            $previous = $previousSnapshots->get($audiobookId);
 
-            $current = RatingSnapshot::where('audiobook_id', $id)
-                ->orderBy('recorded_at', 'desc')
-                ->first();
-
-            if ($previous === null || $current === null) {
+            if ($previous === null) {
                 continue;
             }
 
@@ -187,7 +198,7 @@ class DigestService
             }
 
             if ($previous->num_reviews !== $current->num_reviews) {
-                $changes[$id] = [
+                $changes[$audiobookId] = [
                     'previous' => $previous,
                     'current' => $current,
                 ];
@@ -212,6 +223,7 @@ class DigestService
             ->where('occurred_at', '>=', $windowStart)
             ->where('occurred_at', '<=', $windowEnd)
             ->orderBy('occurred_at')
+            ->with('audiobook')
             ->get()
             ->all();
     }
@@ -232,6 +244,7 @@ class DigestService
             ->where('source', 'auto')
             ->where('created_at', '>=', $windowStart)
             ->where('created_at', '<=', $windowEnd)
+            ->with('audiobook')
             ->get()
             ->all();
     }
